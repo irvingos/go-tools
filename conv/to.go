@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/IrvingOS/go-tools/ptr"
+	"github.com/irvingos/go-tools/ptr"
 )
 
 // StrToInt64E returns strconv.ParseInt(v, 10, 64)
