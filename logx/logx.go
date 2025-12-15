@@ -94,6 +94,10 @@ func Warnf(format string, args ...any) {
 	WithContext(context.Background()).WithCaller(defaultCaller()).Warnf(format, args...)
 }
 
+func Fatal(format string) {
+	WithContext(context.Background()).WithCaller(defaultCaller()).Fatal(format)
+}
+
 func Fatalf(format string, args ...any) {
 	WithContext(context.Background()).WithCaller(defaultCaller()).Fatalf(format, args...)
 }
