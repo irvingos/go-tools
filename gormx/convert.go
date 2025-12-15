@@ -65,3 +65,22 @@ func ToJSON[T any](v T) (datatypes.JSON, error) {
 	b, err := json.Marshal(v)
 	return datatypes.JSON(b), err
 }
+
+func JSONToAny(j datatypes.JSON) (any, error) {
+	if len(j) == 0 {
+		return nil, nil
+	}
+
+	var v any
+	err := json.Unmarshal(j, &v)
+	return v, err
+}
+
+func AnyToJSON(v any) (datatypes.JSON, error) {
+	if v == nil {
+		return nil, nil
+	}
+
+	b, err := json.Marshal(v)
+	return datatypes.JSON(b), err
+}
