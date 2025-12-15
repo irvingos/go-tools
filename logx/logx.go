@@ -70,32 +70,32 @@ func WithContext(ctx context.Context) *E {
 	return e.withTrace(ctx).WithCaller(defaultCaller())
 }
 
-func Info(args any) {
-	WithContext(context.Background()).WithCaller(defaultCaller()).Info(args)
+func Info(args ...any) {
+	WithContext(context.Background()).WithCaller(defaultCaller()).Info(args...)
 }
 
 func Infof(format string, args ...any) {
 	WithContext(context.Background()).WithCaller(defaultCaller()).Infof(format, args...)
 }
 
-func Error(args any) {
-	WithContext(context.Background()).WithCaller(defaultCaller()).Error(args)
+func Error(args ...any) {
+	WithContext(context.Background()).WithCaller(defaultCaller()).Error(args...)
 }
 
 func Errorf(format string, args ...any) {
 	WithContext(context.Background()).WithCaller(defaultCaller()).Errorf(format, args...)
 }
 
-func Warn(args any) {
-	WithContext(context.Background()).WithCaller(defaultCaller()).Warn(args)
+func Warn(args ...any) {
+	WithContext(context.Background()).WithCaller(defaultCaller()).Warn(args...)
 }
 
 func Warnf(format string, args ...any) {
 	WithContext(context.Background()).WithCaller(defaultCaller()).Warnf(format, args...)
 }
 
-func Fatal(format any) {
-	WithContext(context.Background()).WithCaller(defaultCaller()).Fatal(format)
+func Fatal(args ...any) {
+	WithContext(context.Background()).WithCaller(defaultCaller()).Fatal(args...)
 }
 
 func Fatalf(format string, args ...any) {
