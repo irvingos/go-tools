@@ -1,6 +1,7 @@
 package errorx
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -31,6 +32,17 @@ func (e errorx) Message() string {
 
 func (e errorx) HTTPStatus() int {
 	return e.status
+}
+
+func (e errorx) MarshalJSON() ([]byte, error) {
+	type alias struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	return json.Marshal(alias{
+		Code:    e.code,
+		Message: e.message,
+	})
 }
 
 func NewError(code int, message string, status int) Error {
