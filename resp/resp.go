@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	errEmptyParam    = errorx.NewError(1004100, "empty request param", http.StatusBadRequest)
-	errValidateParam = errorx.NewError(1004101, "error validate param", http.StatusBadRequest)
-	errResolveParam  = errorx.NewError(1004102, "error resolve param", http.StatusBadRequest)
+	errEmptyParam    = errorx.NewError(1004100, "empty request param")
+	errValidateParam = errorx.NewError(1004101, "error validate param")
+	errResolveParam  = errorx.NewError(1004102, "error resolve param")
 )
 
 type Response struct {
@@ -35,7 +35,7 @@ func OK(g *gin.Context, data any) {
 
 func ErrorParam(g *gin.Context, err error) {
 	if errors.Is(err, io.EOF) {
-		g.AbortWithStatusJSON(errEmptyParam.HTTPStatus(), Response{
+		g.AbortWithStatusJSON(http.StatusOK, Response{
 			Code:    errEmptyParam.Code(),
 			Message: errEmptyParam.Message(),
 			Detail:  err.Error(),
@@ -44,14 +44,14 @@ func ErrorParam(g *gin.Context, err error) {
 	}
 	var ve validator.ValidationErrors
 	if ok := errors.As(err, &ve); ok {
-		g.AbortWithStatusJSON(errValidateParam.HTTPStatus(), Response{
+		g.AbortWithStatusJSON(http.StatusOK, Response{
 			Code:    errValidateParam.Code(),
 			Message: errValidateParam.Message(),
 			Detail:  err.Error(),
 		})
 		return
 	}
-	g.AbortWithStatusJSON(errResolveParam.HTTPStatus(), Response{
+	g.AbortWithStatusJSON(http.StatusOK, Response{
 		Code:    errResolveParam.Code(),
 		Message: errResolveParam.Message(),
 		Detail:  err.Error(),
@@ -60,14 +60,14 @@ func ErrorParam(g *gin.Context, err error) {
 
 func Error(g *gin.Context, err error) {
 	if apiErr, ok := err.(errorx.Error); ok {
-		g.AbortWithStatusJSON(apiErr.HTTPStatus(), Response{
+		g.AbortWithStatusJSON(http.StatusOK, Response{
 			Code:    apiErr.Code(),
 			Message: apiErr.Message(),
 		})
 		return
 	}
 
-	g.AbortWithStatusJSON(http.StatusInternalServerError, Response{
+	g.AbortWithStatusJSON(http.StatusOK, Response{
 		Code:    errorx.ErrInternal.Code(),
 		Message: errorx.ErrInternal.Message(),
 	})

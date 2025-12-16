@@ -1,15 +1,13 @@
 package gormx
 
 import (
-	"net/http"
-
 	"github.com/irvingos/go-tools/consts"
 	"github.com/irvingos/go-tools/errorx"
 	"gorm.io/gen/field"
 )
 
 var (
-	ErrUnknownSortByField = errorx.NewError(1004200, "unknown sort_by field", http.StatusBadRequest)
+	ErrUnknownSortByField = errorx.NewError(1004200, "unknown sort_by field")
 )
 
 type Model interface {

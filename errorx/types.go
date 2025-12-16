@@ -9,13 +9,11 @@ type Error interface {
 	error
 	Code() int
 	Message() string
-	HTTPStatus() int
 }
 
 type errorx struct {
 	code    int
 	message string
-	status  int
 }
 
 func (e errorx) Error() string {
@@ -30,10 +28,6 @@ func (e errorx) Message() string {
 	return e.message
 }
 
-func (e errorx) HTTPStatus() int {
-	return e.status
-}
-
 func (e errorx) MarshalJSON() ([]byte, error) {
 	type alias struct {
 		Code    int    `json:"code"`
@@ -45,10 +39,10 @@ func (e errorx) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func NewError(code int, message string, status int) Error {
-	return errorx{code: code, message: message, status: status}
+func NewError(code int, message string) Error {
+	return errorx{code: code, message: message}
 }
 
 func Errorf(err Error, args ...any) Error {
-	return errorx{code: err.Code(), message: fmt.Sprintf(err.Message(), args...), status: err.HTTPStatus()}
+	return errorx{code: err.Code(), message: fmt.Sprintf(err.Message(), args...)}
 }
