@@ -3,6 +3,7 @@ package logx
 import (
 	"context"
 
+	"github.com/irvingos/go-tools/trace"
 	"github.com/sirupsen/logrus"
 )
 
@@ -57,7 +58,7 @@ func (e *E) WithError(err error) *E {
 }
 
 func (e *E) withTrace(ctx context.Context) *E {
-	traceID := TraceIDFromContext(ctx)
+	traceID := trace.TraceIDFrom(ctx)
 	if traceID == "" {
 		return e
 	}
