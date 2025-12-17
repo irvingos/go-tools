@@ -20,7 +20,7 @@ var (
 type Response struct {
 	Code    int    `json:"code"`
 	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Message string `json:"message,omitempty"`
 	Detail  string `json:"detail,omitempty"`
 	Data    any    `json:"data,omitempty"`
 }
@@ -28,7 +28,6 @@ type Response struct {
 func OK(g *gin.Context, data any) {
 	g.JSON(http.StatusOK, Response{
 		Success: true,
-		Message: "success",
 		Data:    data,
 	})
 }
