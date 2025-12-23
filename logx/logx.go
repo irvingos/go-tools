@@ -16,12 +16,12 @@ func Init(o *Options) {
 	switch o.Format {
 	case FormatText:
 		base.SetFormatter(&logrus.TextFormatter{
-			TimestampFormat: string(o.TimestampFormat),
+			TimestampFormat: o.TimestampFormat.String(),
 			FullTimestamp:   true,
 		})
 	case FormatJson:
 		base.SetFormatter(&logrus.JSONFormatter{
-			TimestampFormat: string(o.TimestampFormat),
+			TimestampFormat: o.TimestampFormat.String(),
 		})
 	}
 	base.SetLevel(o.Level)
