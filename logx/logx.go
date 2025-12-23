@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/irvingos/go-tools/consts"
+	"github.com/irvingos/go-tools/timex"
 	"github.com/irvingos/go-tools/trace"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +23,7 @@ type Level = logrus.Level
 
 type Options struct {
 	Format          Format
-	TimestampFormat consts.TimeFormat
+	TimestampFormat timex.Format
 	Level           logrus.Level
 	Output          io.Writer
 	Hooks           []logrus.Hook
@@ -35,7 +35,7 @@ func (o *Options) normalize() {
 		o.Format = FormatText
 	}
 	if o.TimestampFormat == "" {
-		o.TimestampFormat = consts.TimeToSecondFormat
+		o.TimestampFormat = timex.Second
 	}
 	if o.Level == 0 {
 		o.Level = logrus.InfoLevel
@@ -52,12 +52,12 @@ func Init(o *Options) {
 	switch o.Format {
 	case FormatText:
 		base.SetFormatter(&logrus.TextFormatter{
-			TimestampFormat: string(o.TimestampFormat),
+			TimestampFormat: o.TimestampFormat.String(),
 			FullTimestamp:   true,
 		})
 	case FormatJson:
 		base.SetFormatter(&logrus.JSONFormatter{
-			TimestampFormat: string(o.TimestampFormat),
+			TimestampFormat: o.TimestampFormat.String(),
 		})
 	}
 	base.SetLevel(o.Level)
