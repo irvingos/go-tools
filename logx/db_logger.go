@@ -66,12 +66,13 @@ func (l *tracedDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 
 	elapsed := time.Since(begin)
 	sql, rows := fc()
+	caller := utils.FileWithLineNum()
 
 	isErr := err != nil && !errors.Is(err, gorm.ErrRecordNotFound)
 	isSlow := l.SlowSQLThreshold != 0 && elapsed > l.SlowSQLThreshold
 
 	if isTraceSQL(ctx) {
-		l.emit(ctx, sql, rows, elapsed, isSlow, err)
+		l.emit(ctx, sql, caller, rows, elapsed, isSlow, err)
 		return
 	}
 
@@ -91,12 +92,12 @@ func (l *tracedDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 		return
 	}
 
-	l.emit(ctx, sql, rows, elapsed, isSlow, err)
+	l.emit(ctx, sql, caller, rows, elapsed, isSlow, err)
 }
 
-func (l *tracedDBLogger) emit(ctx context.Context, sql string, rows int64, elapsed time.Duration, isSlow bool, err error) {
+func (l *tracedDBLogger) emit(ctx context.Context, sql, caller string, rows int64, elapsed time.Duration, isSlow bool, err error) {
 	entry := WithContext(ctx).
-		WithCaller(utils.FileWithLineNum()).
+		WithCaller(caller).
 		WithField("sql", strings.ReplaceAll(sql, "\"", "'")).
 		WithField("rows", rowsOrDash(rows)).
 		WithField("elapsed", fmt.Sprintf("%.3fms", float64(elapsed.Nanoseconds())/1e6))
