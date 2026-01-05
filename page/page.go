@@ -1,10 +1,10 @@
 package page
 
-type QuerySpec struct {
-	Offset int
-	Limit  int
-	SortBy string
-	Order  string
+type Spec struct {
+	Offset    int
+	Limit     int
+	SortBy    string
+	SortOrder string
 }
 
 type Page[T any] struct {
