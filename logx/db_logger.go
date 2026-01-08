@@ -69,7 +69,7 @@ func (l *tracedDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 	// caller 必须在这里获取，不能是在 emit 方法里获取，否则 caller 将会是 db_logger.go
 	caller := utils.FileWithLineNum()
 
-	isErr := err != nil && !errors.Is(err, gorm.ErrRecordNotFound)
+	isErr := err != nil && !errors.Is(err, gorm.ErrRecordNotFound) && !errors.Is(err, context.Canceled)
 	isSlow := l.SlowSQLThreshold != 0 && elapsed > l.SlowSQLThreshold
 
 	if isTraceSQL(ctx) {
