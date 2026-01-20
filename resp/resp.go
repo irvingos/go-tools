@@ -69,5 +69,6 @@ func Error(g *gin.Context, err error) {
 	g.AbortWithStatusJSON(http.StatusOK, Response{
 		Code:    errorx.ErrInternal.Code(),
 		Message: errorx.ErrInternal.Message(),
+		Detail:  err.Error(),
 	})
 }
