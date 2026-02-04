@@ -24,6 +24,7 @@ func Contains[T comparable](src []T, item T) bool {
 	}
 	return false
 }
+
 func TransformWithErrorCheck[A, B any](src []A, fn func(A) (B, error)) ([]B, error) {
 	if src == nil {
 		return nil, nil
