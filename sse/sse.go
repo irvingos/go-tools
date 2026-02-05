@@ -23,6 +23,8 @@ func NewSSEWriter(ctx context.Context, w http.ResponseWriter, heartbeatInterval 
 		flusher:           flusher,
 		heartbeatInterval: heartbeatInterval,
 		lastSendAt:        time.Now(),
+		done:              make(chan struct{}),
+		closed:            false,
 	}
 	if heartbeatInterval > 0 {
 		safego.Go(ctx, func(ctx context.Context) {
@@ -40,6 +42,8 @@ type SSEWriter struct {
 
 	lastSendAt time.Time
 	mu         sync.Mutex
+	done       chan struct{}
+	closed     bool
 }
 
 func (s *SSEWriter) startHeartbeat() {
@@ -56,9 +60,16 @@ func (s *SSEWriter) startHeartbeat() {
 		case <-s.ctx.Done():
 			timer.Stop()
 			return
+		case <-s.done:
+			timer.Stop()
+			return
 		case <-timer.C:
 			// 再次确认这段时间内是否有人发送过数据
 			s.mu.Lock()
+			if s.closed {
+				s.mu.Unlock()
+				return
+			}
 			should := !time.Now().Before(s.lastSendAt.Add(s.heartbeatInterval))
 			s.mu.Unlock()
 
@@ -72,6 +83,10 @@ func (s *SSEWriter) startHeartbeat() {
 func (s *SSEWriter) Event(event string, data any) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if s.closed {
+		return fmt.Errorf("SSEWriter is closed")
+	}
 
 	if event != "" {
 		if _, err := fmt.Fprintf(s.w, "event: %s\n", event); err != nil {
@@ -100,6 +115,10 @@ func (s *SSEWriter) Comment(text string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if s.closed {
+		return fmt.Errorf("SSEWriter is closed")
+	}
+
 	if _, err := fmt.Fprintf(s.w, ": %s\n\n", text); err != nil {
 		return err
 	}
@@ -109,7 +128,18 @@ func (s *SSEWriter) Comment(text string) error {
 }
 
 func (s *SSEWriter) Done() error {
-	return s.Event("done", nil)
+	// 先發送 done 事件
+	err := s.Event("done", nil)
+
+	// 然後標記為關閉並停止 heartbeat
+	s.mu.Lock()
+	if !s.closed {
+		s.closed = true
+		close(s.done)
+	}
+	s.mu.Unlock()
+
+	return err
 }
 
 func (s *SSEWriter) Heartbeat() error {
