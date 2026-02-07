@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
@@ -15,10 +16,17 @@ import (
 type traceSQLKey struct{}
 
 func WithTraceSQL(ctx context.Context) context.Context {
+	if gCtx, ok := ctx.(*gin.Context); ok {
+		gCtx.Set(traceSQLKey{}, true)
+		return gCtx
+	}
 	return context.WithValue(ctx, traceSQLKey{}, true)
 }
 
 func isTraceSQL(ctx context.Context) bool {
+	if gCtx, ok := ctx.(*gin.Context); ok {
+		return gCtx.GetBool(traceSQLKey{})
+	}
 	trace, ok := ctx.Value(traceSQLKey{}).(bool)
 	return ok && trace
 }
