@@ -5,10 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/irvingos/go-tools/errorx"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/irvingos/go-tools/errorx"
 )
 
 var (
@@ -39,6 +38,7 @@ func ErrorParam(g *gin.Context, err error) {
 			Message: errEmptyParam.Message(),
 			Detail:  err.Error(),
 		})
+		WithCode(g, errEmptyParam.Code())
 		return
 	}
 	var ve validator.ValidationErrors
@@ -48,6 +48,7 @@ func ErrorParam(g *gin.Context, err error) {
 			Message: errValidateParam.Message(),
 			Detail:  err.Error(),
 		})
+		WithCode(g, errValidateParam.Code())
 		return
 	}
 	g.AbortWithStatusJSON(http.StatusOK, Response{
@@ -55,6 +56,7 @@ func ErrorParam(g *gin.Context, err error) {
 		Message: errResolveParam.Message(),
 		Detail:  err.Error(),
 	})
+	WithCode(g, errResolveParam.Code())
 }
 
 func Error(g *gin.Context, err error) {
@@ -63,6 +65,7 @@ func Error(g *gin.Context, err error) {
 			Code:    apiErr.Code(),
 			Message: apiErr.Message(),
 		})
+		WithCode(g, apiErr.Code())
 		return
 	}
 
@@ -71,4 +74,5 @@ func Error(g *gin.Context, err error) {
 		Message: errorx.ErrInternal.Message(),
 		Detail:  err.Error(),
 	})
+	WithCode(g, errorx.ErrInternal.Code())
 }

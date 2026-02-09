@@ -18,6 +18,7 @@ const (
 	FieldQuery    Field = "query"
 	FieldUA       Field = "ua"
 	FieldHeaders  Field = "headers"
+	FieldCode     Field = "code"
 
 	// recovery
 	FieldEvent    Field = "event"
