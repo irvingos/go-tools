@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 )
 
+// RuntimeManager 用于管理运行时状态，避免在 shutdown 过程中出现竞态
+// 一旦进入 shutdown 状态，任何 Begin 调用都会失败
 type RuntimeManager struct {
 	wg       sync.WaitGroup
 	shutting atomic.Bool

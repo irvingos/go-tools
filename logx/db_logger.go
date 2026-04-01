@@ -18,7 +18,7 @@ func WithTraceSQL(ctx context.Context) context.Context {
 	return context.WithValue(ctx, traceSQLKey{}, true)
 }
 
-func isTraceSQL(ctx context.Context) bool {
+func IsTraceSQL(ctx context.Context) bool {
 	trace, ok := ctx.Value(traceSQLKey{}).(bool)
 	return ok && trace
 }
@@ -72,7 +72,7 @@ func (l *tracedDBLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 	isErr := err != nil && !errors.Is(err, gorm.ErrRecordNotFound) && !errors.Is(err, context.Canceled)
 	isSlow := l.SlowSQLThreshold != 0 && elapsed > l.SlowSQLThreshold
 
-	if isTraceSQL(ctx) {
+	if IsTraceSQL(ctx) {
 		l.emit(ctx, sql, caller, rows, elapsed, isSlow, err)
 		return
 	}
