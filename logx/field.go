@@ -5,9 +5,12 @@ type Field = string
 
 const (
 	// base
-	FieldTraceID  Field = "trace_id"
-	FieldUsername Field = "username"
-	FieldCaller   Field = "caller"
+	FieldTraceID       Field = "trace_id"
+	FieldTenantID      Field = "tenant_id"
+	FieldUserID        Field = "user_id"
+	FieldUsername      Field = "username"
+	FieldOpenAPIClient Field = "openapi_client"
+	FieldCaller        Field = "caller"
 
 	// http
 	FieldLatency  Field = "latency"

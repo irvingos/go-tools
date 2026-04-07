@@ -37,7 +37,10 @@ func Log() gin.HandlerFunc {
 		// 注意：这里一定要再取一次，因为 g.Request 可能在 g.Next() 过程中被重新赋值
 		ctx = g.Request.Context()
 		logx.WithContext(ctx).
+			WithField(logx.FieldTenantID, auth.TenantIDFrom(ctx)).
+			WithField(logx.FieldUserID, auth.UserIDFrom(ctx)).
 			WithField(logx.FieldUsername, auth.UsernameFrom(ctx)).
+			WithField(logx.FieldOpenAPIClient, auth.OpenAPIClientFrom(ctx)).
 			WithField(logx.FieldLatency, fmt.Sprintf("%.3fms", float64(latency.Nanoseconds())/1e6)).
 			WithField(logx.FieldStatus, g.Writer.Status()).
 			WithField(logx.FieldCode, resp.CodeFrom(ctx)).
