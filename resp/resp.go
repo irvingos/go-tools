@@ -38,7 +38,7 @@ func ErrorParam(g *gin.Context, err error) {
 			Message: errEmptyParam.Message(),
 			Detail:  err.Error(),
 		})
-		WithCode(g.Request.Context(), errEmptyParam.Code())
+		g.Request = g.Request.WithContext(WithCode(g.Request.Context(), errEmptyParam.Code()))
 		return
 	}
 	var ve validator.ValidationErrors
@@ -48,7 +48,7 @@ func ErrorParam(g *gin.Context, err error) {
 			Message: errValidateParam.Message(),
 			Detail:  err.Error(),
 		})
-		WithCode(g.Request.Context(), errValidateParam.Code())
+		g.Request = g.Request.WithContext(WithCode(g.Request.Context(), errValidateParam.Code()))
 		return
 	}
 	g.AbortWithStatusJSON(http.StatusOK, Response{
@@ -56,7 +56,7 @@ func ErrorParam(g *gin.Context, err error) {
 		Message: errResolveParam.Message(),
 		Detail:  err.Error(),
 	})
-	WithCode(g.Request.Context(), errResolveParam.Code())
+	g.Request = g.Request.WithContext(WithCode(g.Request.Context(), errResolveParam.Code()))
 }
 
 func Error(g *gin.Context, err error) {
@@ -65,7 +65,7 @@ func Error(g *gin.Context, err error) {
 			Code:    apiErr.Code(),
 			Message: apiErr.Message(),
 		})
-		WithCode(g.Request.Context(), apiErr.Code())
+		g.Request = g.Request.WithContext(WithCode(g.Request.Context(), apiErr.Code()))
 		return
 	}
 
@@ -74,5 +74,5 @@ func Error(g *gin.Context, err error) {
 		Message: errorx.ErrInternal.Message(),
 		Detail:  err.Error(),
 	})
-	WithCode(g.Request.Context(), errorx.ErrInternal.Code())
+	g.Request = g.Request.WithContext(WithCode(g.Request.Context(), errorx.ErrInternal.Code()))
 }
