@@ -2,199 +2,209 @@ package graceful
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
 )
 
-func TestRuntimeManager_BeginEnd(t *testing.T) {
-	m := &RuntimeManager{}
-
-	// 正常開始和結束
-	if !m.Begin() {
-		t.Error("Begin() should return true when not shutting down")
+func TestNewRuntimeManager(t *testing.T) {
+	m := NewRuntimeManager()
+	if m == nil {
+		t.Fatal("NewRuntimeManager returned nil")
 	}
-	m.End()
-}
-
-func TestRuntimeManager_BeginAfterShutdown(t *testing.T) {
-	m := &RuntimeManager{}
-
-	// 開始關閉
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	go func() {
-		_ = m.Shutdown(ctx)
-	}()
-
-	// 等待 shutdown 開始
-	time.Sleep(10 * time.Millisecond)
-
-	// 關閉後 Begin 應該返回 false
-	if m.Begin() {
-		t.Error("Begin() should return false after shutdown started")
-		m.End() // 避免洩漏
+	if m.IsRunning("any") {
+		t.Fatal("new manager should have no runtimes")
 	}
 }
 
-func TestRuntimeManager_IsShuttingDown(t *testing.T) {
-	m := &RuntimeManager{}
+func TestStartAndDone(t *testing.T) {
+	m := NewRuntimeManager()
+	ctx := context.Background()
 
-	if m.IsShuttingDown() {
-		t.Error("IsShuttingDown() should return false initially")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	go func() {
-		_ = m.Shutdown(ctx)
-	}()
-
-	// 等待 shutdown 開始
-	time.Sleep(10 * time.Millisecond)
-
-	if !m.IsShuttingDown() {
-		t.Error("IsShuttingDown() should return true after shutdown started")
-	}
-}
-
-func TestRuntimeManager_ShutdownWaitsForTasks(t *testing.T) {
-	m := &RuntimeManager{}
-
-	taskDone := make(chan struct{})
-
-	// 開始一個任務
-	if !m.Begin() {
-		t.Fatal("Begin() should return true")
-	}
-
-	go func() {
-		time.Sleep(50 * time.Millisecond)
-		m.End()
-		close(taskDone)
-	}()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
-	start := time.Now()
-	err := m.Shutdown(ctx)
-	elapsed := time.Since(start)
-
+	h, err := m.Start(ctx, "a")
 	if err != nil {
-		t.Errorf("Shutdown() should not return error, got: %v", err)
+		t.Fatalf("Start: %v", err)
+	}
+	if !m.IsRunning("a") {
+		t.Fatal("IsRunning(a) should be true after Start")
 	}
 
-	// 應該等待任務完成
-	if elapsed < 50*time.Millisecond {
-		t.Errorf("Shutdown() should wait for tasks, elapsed: %v", elapsed)
+	h.Done()
+	if m.IsRunning("a") {
+		t.Fatal("IsRunning(a) should be false after Done")
 	}
 
-	<-taskDone
+	if err := m.Drain(context.Background()); err != nil {
+		t.Fatalf("Drain: %v", err)
+	}
 }
 
-func TestRuntimeManager_ShutdownTimeout(t *testing.T) {
-	m := &RuntimeManager{}
+func TestStartDuplicateKey(t *testing.T) {
+	m := NewRuntimeManager()
+	ctx := context.Background()
 
-	// 開始一個永遠不會結束的任務
-	if !m.Begin() {
-		t.Fatal("Begin() should return true")
+	if _, err := m.Start(ctx, "x"); err != nil {
+		t.Fatalf("first Start: %v", err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-	defer cancel()
-
-	err := m.Shutdown(ctx)
-
-	if err != context.DeadlineExceeded {
-		t.Errorf("Shutdown() should return DeadlineExceeded, got: %v", err)
+	_, err := m.Start(ctx, "x")
+	if !errors.Is(err, ErrRuntimeAlreadyExists) {
+		t.Fatalf("second Start: got %v, want ErrRuntimeAlreadyExists", err)
 	}
-
-	// 清理：結束任務以避免洩漏
-	m.End()
 }
 
-func TestRuntimeManager_ConcurrentBeginEnd(t *testing.T) {
-	m := &RuntimeManager{}
+func TestStartAfterDrain(t *testing.T) {
+	m := NewRuntimeManager()
+	ctx := context.Background()
 
-	const numGoroutines = 100
+	h, err := m.Start(ctx, "r")
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	h.Done()
+
+	if err := m.Drain(context.Background()); err != nil {
+		t.Fatalf("Drain: %v", err)
+	}
+
+	if _, err := m.Start(ctx, "r2"); !errors.Is(err, ErrShuttingDown) {
+		t.Fatalf("Start after Drain: got %v, want ErrShuttingDown", err)
+	}
+}
+
+func TestCancel(t *testing.T) {
+	m := NewRuntimeManager()
+	ctx := context.Background()
+
+	h, err := m.Start(ctx, "c")
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+
+	if !m.Cancel("c") {
+		t.Fatal("Cancel should return true for existing key")
+	}
+	select {
+	case <-h.Context().Done():
+	case <-time.After(time.Second):
+		t.Fatal("context should be canceled after Cancel")
+	}
+	if !m.IsRunning("c") {
+		t.Fatal("Cancel does not remove runtime; IsRunning should still be true until Done")
+	}
+
+	h.Done()
+	if m.IsRunning("c") {
+		t.Fatal("after Done, runtime should be gone")
+	}
+}
+
+func TestCancelMissing(t *testing.T) {
+	m := NewRuntimeManager()
+	if m.Cancel("nope") {
+		t.Fatal("Cancel missing key should return false")
+	}
+}
+
+func TestShutdownWaitsForDone(t *testing.T) {
+	m := NewRuntimeManager()
+	ctx := context.Background()
+
 	var wg sync.WaitGroup
-	wg.Add(numGoroutines)
-
-	for range numGoroutines {
-		go func() {
+	for _, key := range []string{"u", "v"} {
+		h, err := m.Start(ctx, key)
+		if err != nil {
+			t.Fatalf("Start %s: %v", key, err)
+		}
+		wg.Add(1)
+		go func(h *RuntimeHandle) {
 			defer wg.Done()
-			if m.Begin() {
-				time.Sleep(time.Millisecond)
-				m.End()
-			}
-		}()
+			<-h.Context().Done()
+			h.Done()
+		}(h)
 	}
 
-	wg.Wait()
-
-	// 所有任務完成後應該能正常關閉
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-
-	err := m.Shutdown(ctx)
-	if err != nil {
-		t.Errorf("Shutdown() should not return error after all tasks done, got: %v", err)
+	if err := m.Shutdown(shutdownCtx); err != nil {
+		t.Fatalf("Shutdown: %v", err)
 	}
+	wg.Wait()
 }
 
-func TestRuntimeManager_BeginDuringShutdown(t *testing.T) {
-	m := &RuntimeManager{}
+func TestDrainWaitsForDone(t *testing.T) {
+	m := NewRuntimeManager()
+	ctx := context.Background()
 
-	// 開始一個任務
-	if !m.Begin() {
-		t.Fatal("Begin() should return true")
+	h, err := m.Start(ctx, "d")
+	if err != nil {
+		t.Fatalf("Start: %v", err)
 	}
 
-	shutdownDone := make(chan error)
-
+	done := make(chan struct{})
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		defer cancel()
-		shutdownDone <- m.Shutdown(ctx)
+		defer close(done)
+		h.Done()
 	}()
 
-	// 等待 shutdown 開始
-	time.Sleep(10 * time.Millisecond)
+	drainCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := m.Drain(drainCtx); err != nil {
+		t.Fatalf("Drain: %v", err)
+	}
+	<-done
+}
 
-	// 在 shutdown 期間嘗試 Begin
-	if m.Begin() {
-		t.Error("Begin() should return false during shutdown")
-		m.End()
+func TestWaitContextCanceled(t *testing.T) {
+	m := NewRuntimeManager()
+	ctx := context.Background()
+
+	if _, err := m.Start(ctx, "block"); err != nil {
+		t.Fatalf("Start: %v", err)
 	}
 
-	// 結束原始任務
-	m.End()
+	waitCtx, cancel := context.WithCancel(context.Background())
+	cancel()
 
-	// 等待 shutdown 完成
-	err := <-shutdownDone
-	if err != nil {
-		t.Errorf("Shutdown() should complete without error, got: %v", err)
+	if err := m.wait(waitCtx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("wait: got %v, want context.Canceled", err)
 	}
 }
 
-func TestRuntimeManager_MultipleShutdown(t *testing.T) {
-	m := &RuntimeManager{}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	// 第一次 shutdown
-	err := m.Shutdown(ctx)
+func TestDoneIdempotent(t *testing.T) {
+	m := NewRuntimeManager()
+	h, err := m.Start(context.Background(), "id")
 	if err != nil {
-		t.Errorf("First Shutdown() should not return error, got: %v", err)
+		t.Fatalf("Start: %v", err)
 	}
+	h.Done()
+	h.Done()
+	if m.IsRunning("id") {
+		t.Fatal("runtime should be removed after first Done")
+	}
+	if err := m.Drain(context.Background()); err != nil {
+		t.Fatalf("Drain: %v", err)
+	}
+}
 
-	// 第二次 shutdown 也應該正常完成
-	err = m.Shutdown(ctx)
+func TestDoneReplacesOnlyCurrentHandle(t *testing.T) {
+	m := NewRuntimeManager()
+	h1, err := m.Start(context.Background(), "same")
 	if err != nil {
-		t.Errorf("Second Shutdown() should not return error, got: %v", err)
+		t.Fatalf("Start: %v", err)
+	}
+	h1.Done()
+
+	h2, err := m.Start(context.Background(), "same")
+	if err != nil {
+		t.Fatalf("second Start: %v", err)
+	}
+	h1.Done()
+	if !m.IsRunning("same") {
+		t.Fatal("Done on stale handle must not delete current runtime")
+	}
+	h2.Done()
+	if err := m.Drain(context.Background()); err != nil {
+		t.Fatalf("Drain: %v", err)
 	}
 }
