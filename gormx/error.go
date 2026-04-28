@@ -8,11 +8,26 @@ import (
 	"gorm.io/gorm"
 )
 
-func IsDuplicateKeyError(err error) bool {
+func IsUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation
 }
 
-func IsRecordNotFoundError(err error) bool {
+func IsUniqueViolationConstraint(err error, constraint string) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation && pgErr.ConstraintName == constraint
+}
+
+func IsRecordNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
+}
+
+// Deprecated: Use IsUniqueViolation instead
+func IsDuplicateKeyError(err error) bool {
+	return IsUniqueViolation(err)
+}
+
+// Deprecated: Use IsRecordNotFound instead
+func IsRecordNotFoundError(err error) bool {
+	return IsRecordNotFound(err)
 }
