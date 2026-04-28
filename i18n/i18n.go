@@ -9,6 +9,11 @@ const (
 	LocaleZH Locale = "zh-CN"
 )
 
+func (l Locale) String() string {
+	return string(l)
+}
+
+// key for context
 const key = "i18n.locale.key"
 
 func WithLocale(ctx context.Context, locale string) context.Context {
