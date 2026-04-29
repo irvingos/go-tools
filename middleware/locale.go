@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/irvingos/go-tools/consts"
 	"github.com/irvingos/go-tools/i18n"
 )
 
