@@ -14,24 +14,16 @@ func (l Locale) String() string {
 }
 
 // key for context
-const key = "i18n.locale.key"
+type localeKey struct{}
 
-func WithLocale(ctx context.Context, locale string) context.Context {
-	return context.WithValue(ctx, key, locale)
+func WithLocale(ctx context.Context, locale Locale) context.Context {
+	return context.WithValue(ctx, localeKey{}, locale)
 }
 
 func LocaleFrom(ctx context.Context) Locale {
-	locale := ctx.Value(key)
-	if locale == nil {
+	locale, ok := ctx.Value(localeKey{}).(Locale)
+	if !ok {
 		return LocaleEN
 	}
-
-	switch locale {
-	case "en-US":
-		return LocaleEN
-	case "zh-CN":
-		return LocaleZH
-	default:
-		return LocaleEN
-	}
+	return locale
 }
