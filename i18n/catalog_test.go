@@ -26,7 +26,7 @@ func TestCatalogErrorMessageWithArgs(t *testing.T) {
 		t.Fatalf("LoadDir: %v", err)
 	}
 
-	err = errorx.Errorf(errorx.ErrBadRequest, "name")
+	err = errorx.Format(errorx.ErrBadRequest, "name")
 
 	if got, want := catalog.ErrorMessage(LocaleEN, err), "field name is required"; got != want {
 		t.Fatalf("en message = %q, want %q", got, want)

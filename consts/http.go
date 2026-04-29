@@ -5,4 +5,6 @@ const (
 
 	HTTP_HEADER_AUTHORIZATION        = "Authorization"
 	HTTP_HEADER_AUTHORIZATION_PREFIX = "Bearer "
+
+	HTTP_ACCEPT_LANGUAGE = "Accept-Language"
 )

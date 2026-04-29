@@ -37,7 +37,7 @@ func TestResponderErrorWithFormattedError(t *testing.T) {
 	g, _ := gin.CreateTestContext(w)
 	g.Request = httptest.NewRequest(http.MethodGet, "/", nil)
 
-	NewResponder(catalog).Error(g, errorx.Errorf(errorx.ErrBadRequest, "name"))
+	NewResponder(catalog).Error(g, errorx.Format(errorx.ErrBadRequest, "name"))
 
 	if got, want := w.Code, http.StatusOK; got != want {
 		t.Fatalf("status = %d, want %d", got, want)

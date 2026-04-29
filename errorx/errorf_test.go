@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestErrorf(t *testing.T) {
-	err := Errorf(ErrBadRequest, "name")
+func TestFormat(t *testing.T) {
+	err := Format(ErrBadRequest, "name")
 
 	if got, want := err.Error(), ErrBadRequest.Error(); got != want {
 		t.Fatalf("Error() = %q, want %q", got, want)
