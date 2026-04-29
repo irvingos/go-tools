@@ -21,7 +21,7 @@ import (
 
 const maxStackBytes = 64 << 10 // 64KB
 
-func RecoveryMiddleware(hideHeaders []string, responder *resp.Responder) gin.HandlerFunc {
+func Recovery(hideHeaders []string, responder *resp.Responder) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ecw := &errCapturingWriter{ResponseWriter: ctx.Writer}
 		ctx.Writer = ecw
