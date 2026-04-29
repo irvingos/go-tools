@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +34,12 @@ func (c *Catalog) Message(locale Locale, key string) string {
 func (c *Catalog) ErrorMessage(locale Locale, err error) string {
 	var errorCode errorx.Error
 	if ok := errors.As(err, &errorCode); ok {
-		return c.Message(locale, errorCode.I18nKey())
+		msg := c.Message(locale, errorCode.I18nKey())
+		var argError errorx.FormattedError
+		if errors.As(err, &argError) {
+			return fmt.Sprintf(msg, argError.Args()...)
+		}
+		return msg
 	}
 	return c.ErrorMessage(locale, errorx.ErrInternalServerError)
 }

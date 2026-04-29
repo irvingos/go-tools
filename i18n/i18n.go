@@ -5,8 +5,8 @@ import "context"
 type Locale string
 
 const (
-	LocaleEN Locale = "en-US"
 	LocaleZH Locale = "zh-CN"
+	LocaleEN Locale = "en-US"
 )
 
 func (l Locale) String() string {
@@ -23,7 +23,7 @@ func WithLocale(ctx context.Context, locale Locale) context.Context {
 func LocaleFrom(ctx context.Context) Locale {
 	locale, ok := ctx.Value(localeKey{}).(Locale)
 	if !ok {
-		return LocaleEN
+		return LocaleZH
 	}
 	return locale
 }
