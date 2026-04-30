@@ -33,37 +33,37 @@ func (r *Responder) Success(g *gin.Context, data any) {
 }
 
 func (r *Responder) Error(g *gin.Context, err error) {
-	locale := i18n.LocaleFrom(g.Request.Context())
+	ctx := g.Request.Context()
 
 	var errorCode errorx.Error
 	if ok := errors.As(err, &errorCode); ok {
-		msg := r.catalog.ErrorMessage(locale, err)
+		msg := r.catalog.ErrorMessage(ctx, err)
 
 		g.AbortWithStatusJSON(http.StatusOK, Response{
 			Code:    errorCode.Code(),
 			Message: msg,
 		})
-		g.Request = g.Request.WithContext(WithCode(g.Request.Context(), errorCode.Code()))
+		g.Request = g.Request.WithContext(WithCode(ctx, errorCode.Code()))
 		return
 	}
 
-	msg := r.catalog.ErrorMessage(locale, errorx.ErrInternalServerError)
+	msg := r.catalog.ErrorMessage(ctx, errorx.ErrInternalServerError)
 	g.AbortWithStatusJSON(http.StatusOK, Response{
 		Code:    errorx.ErrInternalServerError.Code(),
 		Message: msg,
 		Detail:  err.Error(),
 	})
-	g.Request = g.Request.WithContext(WithCode(g.Request.Context(), errorx.ErrInternalServerError.Code()))
+	g.Request = g.Request.WithContext(WithCode(ctx, errorx.ErrInternalServerError.Code()))
 }
 
 func (r *Responder) ErrorParam(g *gin.Context, err error) {
-	locale := i18n.LocaleFrom(g.Request.Context())
+	ctx := g.Request.Context()
 
-	msg := r.catalog.ErrorMessage(locale, errorx.ErrBadRequest)
+	msg := r.catalog.ErrorMessage(ctx, errorx.ErrBadRequest)
 	g.AbortWithStatusJSON(http.StatusOK, Response{
 		Code:    errorx.ErrBadRequest.Code(),
 		Message: msg,
 		Detail:  err.Error(),
 	})
-	g.Request = g.Request.WithContext(WithCode(g.Request.Context(), errorx.ErrBadRequest.Code()))
+	g.Request = g.Request.WithContext(WithCode(ctx, errorx.ErrBadRequest.Code()))
 }

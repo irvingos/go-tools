@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,11 +28,13 @@ func TestCatalogErrorMessageWithArgs(t *testing.T) {
 	}
 
 	err = errorx.Format(errorx.ErrBadRequest, "name")
-
-	if got, want := catalog.ErrorMessage(LocaleEN, err), "field name is required"; got != want {
+	ctx := context.Background()
+	ctx = WithLocale(ctx, LocaleEN)
+	if got, want := catalog.ErrorMessage(ctx, err), "field name is required"; got != want {
 		t.Fatalf("en message = %q, want %q", got, want)
 	}
-	if got, want := catalog.ErrorMessage(LocaleZH, err), "字段 name 必填"; got != want {
+	ctx = WithLocale(ctx, LocaleZH)
+	if got, want := catalog.ErrorMessage(ctx, err), "字段 name 必填"; got != want {
 		t.Fatalf("zh message = %q, want %q", got, want)
 	}
 }

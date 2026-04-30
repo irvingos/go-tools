@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -16,7 +17,8 @@ type Catalog struct {
 	messages      map[Locale]map[string]string
 }
 
-func (c *Catalog) Message(locale Locale, key string) string {
+func (c *Catalog) Message(ctx context.Context, key string) string {
+	locale := LocaleFrom(ctx)
 	if m := c.messages[locale]; m != nil {
 		if msg, ok := m[key]; ok {
 			return msg
@@ -31,17 +33,17 @@ func (c *Catalog) Message(locale Locale, key string) string {
 	return key
 }
 
-func (c *Catalog) ErrorMessage(locale Locale, err error) string {
+func (c *Catalog) ErrorMessage(ctx context.Context, err error) string {
 	var errorCode errorx.Error
 	if ok := errors.As(err, &errorCode); ok {
-		msg := c.Message(locale, errorCode.I18nKey())
+		msg := c.Message(ctx, errorCode.I18nKey())
 		var argError errorx.FormattedError
 		if errors.As(err, &argError) {
 			return fmt.Sprintf(msg, argError.Args()...)
 		}
 		return msg
 	}
-	return c.ErrorMessage(locale, errorx.ErrInternalServerError)
+	return c.ErrorMessage(ctx, errorx.ErrInternalServerError)
 }
 
 func LoadDir(dir string, defaultLocale Locale) (*Catalog, error) {
