@@ -38,3 +38,20 @@ func TestCatalogErrorMessageWithArgs(t *testing.T) {
 		t.Fatalf("zh message = %q, want %q", got, want)
 	}
 }
+
+func TestCatalogErrorMessageWithNestedKey(t *testing.T) {
+	catalog, err := LoadDir("./", LocaleEN)
+	if err != nil {
+		t.Fatalf("LoadDir: %v", err)
+	}
+	ctx := context.Background()
+	ctx = WithLocale(ctx, LocaleEN)
+	if got, want := catalog.ErrorMessage(ctx, errorx.ErrBadRequest), "Bad request"; got != want {
+		t.Fatalf("en message = %q, want %q", got, want)
+	}
+
+	ctx = WithLocale(ctx, LocaleZH)
+	if got, want := catalog.ErrorMessage(ctx, errorx.ErrBadRequest), "错误请求"; got != want {
+		t.Fatalf("zh message = %q, want %q", got, want)
+	}
+}

@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -71,10 +72,9 @@ func LoadDir(dir string, defaultLocale Locale) (*Catalog, error) {
 			return nil, err
 		}
 
-		msg := make(map[string]string)
-		err = yaml.Unmarshal(content, &msg)
+		msg, err := MessagesFromYAML(content)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%s: %w", file.Name(), err)
 		}
 
 		messages[locale] = msg
@@ -84,4 +84,70 @@ func LoadDir(dir string, defaultLocale Locale) (*Catalog, error) {
 		defaultLocale: defaultLocale,
 		messages:      messages,
 	}, nil
+}
+
+// MessagesFromYAML 将 YAML 解析为扁平 map[string]string。
+// 支持两种写法（可混用）：
+//   - 嵌套：common: { bad_request: "..." }
+//   - 扁平：common.bad_request: "..."
+//
+// 键冲突（解析后得到同一完整键）时返回错误。
+func MessagesFromYAML(content []byte) (map[string]string, error) {
+	if len(bytes.TrimSpace(content)) == 0 {
+		return map[string]string{}, nil
+	}
+	var root map[string]interface{}
+	if err := yaml.Unmarshal(content, &root); err != nil {
+		return nil, err
+	}
+	if root == nil {
+		return map[string]string{}, nil
+	}
+	return flattenMessageRoot(root)
+}
+
+func flattenMessageRoot(root map[string]interface{}) (map[string]string, error) {
+	out := make(map[string]string)
+	for k, v := range root {
+		if err := walkFlatten("", k, v, out); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+func walkFlatten(prefix, key string, v interface{}, out map[string]string) error {
+	full := key
+	if prefix != "" {
+		full = prefix + "." + key
+	}
+
+	switch t := v.(type) {
+	case string:
+		if _, exists := out[full]; exists {
+			return fmt.Errorf("i18n: duplicate key %q", full)
+		}
+		out[full] = t
+	case map[string]interface{}:
+		for nk, nv := range t {
+			if err := walkFlatten(full, nk, nv, out); err != nil {
+				return err
+			}
+		}
+	case map[interface{}]interface{}:
+		for nk, nv := range t {
+			ks, ok := nk.(string)
+			if !ok {
+				return fmt.Errorf("i18n: non-string map key under %q", full)
+			}
+			if err := walkFlatten(full, ks, nv, out); err != nil {
+				return err
+			}
+		}
+	case nil:
+		return fmt.Errorf("i18n: nil value for key %q", full)
+	default:
+		return fmt.Errorf("i18n: invalid value type for key %q: want string or map, got %T", full, v)
+	}
+	return nil
 }
