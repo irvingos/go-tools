@@ -25,7 +25,7 @@ type Responder struct {
 	catalog *i18n.Catalog
 }
 
-func (r *Responder) OK(g *gin.Context, data any) {
+func (r *Responder) Success(g *gin.Context, data any) {
 	g.JSON(http.StatusOK, Response{
 		Success: true,
 		Data:    data,
