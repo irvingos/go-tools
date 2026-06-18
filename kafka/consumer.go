@@ -8,7 +8,9 @@ import (
 	"github.com/IBM/sarama"
 )
 
-type MessageHandler func(ctx context.Context, message []byte) error
+type MessageHandler interface {
+	Handle(ctx context.Context, message []byte) error
+}
 
 type Consumer interface {
 	Run(ctx context.Context, handler MessageHandler) error
@@ -106,7 +108,7 @@ func (h *groupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 				return nil
 			}
 			handlerCtx := context.WithoutCancel(session.Context())
-			if err := h.handler(handlerCtx, message.Value); err != nil {
+			if err := h.handler.Handle(handlerCtx, message.Value); err != nil {
 				return fmt.Errorf("handle kafka message topic=%s partition=%d offset=%d: %w",
 					message.Topic, message.Partition, message.Offset, err)
 			}
